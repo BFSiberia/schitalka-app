@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Считалка — калькулятор заказа</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#7ac143">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Считалка">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+  :root{
+    --green:#7ac143; --green-dark:#5fa531; --bg:#f4f6f4; --card:#fff;
+    --text:#1d2421; --muted:#7b857f; --line:#e6e9e6; --red:#e2483c; --shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#15171a; --card:#1f2227; --text:#eef1ee; --muted:#9aa39c; --line:#2d3138; --shadow:0 1px 3px rgba(0,0,0,.4); }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    padding-bottom:calc(70px + env(safe-area-inset-bottom));
+  }
+  /* верхняя панель */
+  header{
+    position:sticky; top:0; z-index:20; background:var(--green); color:#fff;
+    padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header .ic{width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff}
+  header .ic svg{width:26px; height:26px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+  header .brand svg{fill:#fff; stroke:none}
+  /* поиск */
+  .searchbar{position:sticky; top:0; z-index:15; background:var(--bg); padding:12px 14px 6px}
+  .wrap{max-width:680px; margin:0 auto}
+  .search{position:relative}
+  .search input{
+    width:100%; padding:12px 40px 12px 40px; border-radius:12px; border:1px solid var(--line);
+    background:var(--card); color:var(--text); font-size:15px;
+  }
+  .search .mag{position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--muted)}
+  .search .clr{position:absolute; right:10px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:var(--muted); font-size:20px; cursor:pointer; padding:4px}
+  .list{padding:6px 14px 14px}
+  .item{
+    background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:10px;
+    display:flex; align-items:center; gap:12px; box-shadow:var(--shadow);
+  }
+  .item img.thumb{width:50px; height:50px; object-fit:contain; flex:none}
+  .item .info{flex:1; min-width:0}
+  .item .name{font-weight:600; font-size:14.5px; line-height:1.25; overflow-wrap:break-word; -webkit-hyphens:auto; hyphens:auto; hyphenate-limit-chars:14 6 6; -webkit-hyphenate-limit-before:6; -webkit-hyphenate-limit-after:6}
+  .item .meta{color:var(--muted); font-size:12px; margin-top:3px}
+  .item .row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px}
+  .item .unit{font-size:13px; color:var(--green-dark); font-weight:700; min-width:0}
+  .item .unit.none{color:var(--muted); font-weight:400}
+  .stepper{display:flex; flex-direction:column; align-items:center; gap:4px; flex:none}
+  .stepper .btns{display:flex; align-items:center; gap:6px}
+  .step{width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:20px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center}
+  .step.plus{background:var(--green); color:#fff; border-color:var(--green)}
+  .step:active{transform:scale(.92)}
+  .qty{min-width:26px; text-align:center; font-weight:700; font-size:15px}
+  .item.active{outline:2px solid var(--green)}
+  .empty{color:var(--muted); text-align:center; padding:40px 10px}
+  /* нижняя панель */
+  footer{
+    position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--green); color:#fff;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+    display:flex; align-items:center; gap:10px;
+  }
+  footer .fwrap{max-width:680px; margin:0 auto; width:100%; display:flex; align-items:center; gap:12px}
+  footer select{
+    padding:8px 10px; border-radius:10px; border:0; background:rgba(255,255,255,.95); color:#1d2421; font-size:15px; font-weight:700;
+  }
+  footer .vp{flex:1; text-align:center; font-size:14px; opacity:.95}
+  footer .total{font-size:20px; font-weight:800; cursor:pointer; white-space:nowrap}
+  footer .total .lbl{font-size:11px; font-weight:600; opacity:.9; display:block; text-align:right}
+  /* модалка чека */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; display:none; align-items:flex-end; justify-content:center}
+  .overlay.open{display:flex}
+  .sheet{background:var(--card); width:100%; max-width:680px; max-height:90vh; overflow:auto; border-radius:18px 18px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+  .sheet h2{margin:0 0 12px; font-size:18px; display:flex; justify-content:space-between; align-items:center}
+  .sheet h2 .x{border:0;background:transparent;font-size:22px;color:var(--muted);cursor:pointer}
+  .receipt{white-space:pre-wrap; font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; background:var(--bg); border-radius:12px; padding:14px; border:1px solid var(--line)}
+  .actions{display:flex; gap:8px; margin-top:14px}
+  .btn{border:0; border-radius:12px; padding:12px 16px; font-size:15px; font-weight:700; cursor:pointer; flex:1}
+  .btn.green{background:var(--green); color:#fff}
+  .btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--line)}
+  /* экран пароля */
+  .gate{position:fixed; inset:0; z-index:200; background:var(--bg); display:none; align-items:center; justify-content:center; padding:24px}
+  .gate.open{display:flex}
+  .gate form{width:100%; max-width:320px; text-align:center}
+  .gate h1{font-size:20px; margin:0 0 6px}
+  .gate p{color:var(--muted); font-size:13px; margin:0 0 18px}
+  .gate input{width:100%; padding:13px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:16px}
+  .gate .err{color:var(--red); font-size:13px; min-height:18px; margin-top:10px}
+  .gate button{margin-top:6px; width:100%}
+</style>
+</head>
+<body>
+<header>
+  <div class="ic" aria-hidden="true"></div><!-- пустое место слева: логотип остаётся по центру -->
+  <div class="ic brand" title="Считалка">
+    <svg viewBox="0 0 24 24"><rect x="4" y="2.5" width="16" height="19" rx="3" fill="#fff"/><rect x="6.5" y="5" width="11" height="4" rx="1" fill="#7ac143"/><g fill="#7ac143"><circle cx="8.5" cy="12.5" r="1.4"/><circle cx="12" cy="12.5" r="1.4"/><circle cx="15.5" cy="12.5" r="1.4"/><circle cx="8.5" cy="16.5" r="1.4"/><circle cx="12" cy="16.5" r="1.4"/><circle cx="15.5" cy="16.5" r="1.4"/></g></svg>
+  </div>
+  <div class="ic" id="btnReceipt" title="Чек">
+    <svg viewBox="0 0 24 24"><path d="M12 5c-5 0-8 4.5-8 7s3 7 8 7 8-4.5 8-7-3-7-8-7z"/><circle cx="12" cy="12" r="3"/></svg>
+  </div>
+</header>
+
+<div class="searchbar">
+  <div class="wrap search">
+    <span class="mag">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    </span>
+    <input id="search" type="search" placeholder="Поиск" autocomplete="off">
+    <button class="clr" id="btnClearSearch" aria-label="очистить">✕</button>
+  </div>
+</div>
+
+<div class="wrap"><div class="list" id="list"></div></div>
+
+<footer>
+  <div class="fwrap">
+    <select id="percent"></select>
+    <div class="vp"><span id="totalVp">0.00</span> vp</div>
+    <div class="total" id="totalBox"><span class="lbl">позиций: <span id="count">0</span></span><span id="total">0,00 ₽</span></div>
+  </div>
+</footer>
+
+<div class="gate open" id="gate">
+  <form id="gateForm">
+    <h1>Считалка</h1>
+    <p>Каталог закрыт паролем. Пароль спросят один раз на этом устройстве.</p>
+    <input id="password" type="password" autocomplete="current-password" placeholder="Пароль" aria-label="Пароль">
+    <div class="err" id="gateError"></div>
+    <button class="btn green" type="submit">Открыть</button>
+  </form>
+</div>
+
+<div class="overlay" id="receiptOverlay">
+  <div class="sheet">
+    <h2>Ваш чек <button class="x" id="btnCloseReceipt">✕</button></h2>
+    <div class="receipt" id="receiptText"></div>
+    <div class="actions">
+      <button class="btn green" id="btnCopy">Скопировать чек</button>
+      <button class="btn ghost" id="btnClear">Очистить заказ</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
+</script>
+</body>
+</html>
