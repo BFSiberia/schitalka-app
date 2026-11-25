@@ -1,5 +1,5 @@
 /* Кэширует оболочку приложения, чтобы оно работало офлайн. */
-var CACHE = 'schitalka-57acebce0dbb';   /* в dist/ заменяется на хэш содержимого */
+var CACHE = 'schitalka-a29bf6e5545e';   /* в dist/ заменяется на хэш содержимого */
 /* Список пересобирается scripts/build.py: в dist/ сюда попадают каталог и все картинки. */
 var ASSETS = [
   './',
@@ -39,7 +39,6 @@ var ASSETS = [
   './img/1189.png',
   './img/141K.png',
   './img/142K.png',
-  './img/1437.png',
   './img/1466.png',
   './img/149K.png',
   './img/150K.png',
@@ -68,6 +67,8 @@ var ASSETS = [
   './img/335K.png',
   './img/371A.png',
   './img/395K.png',
+  './img/403K.png',
+  './img/439K.png',
   './img/4467.png',
   './img/4468.png',
   './img/4472.png',
@@ -75,6 +76,8 @@ var ASSETS = [
   './img/500K.png',
   './img/528K.png',
   './img/530K.png',
+  './img/6T47.png',
+  './img/6T48.png',
   './img/719A.png',
   './img/8697.png',
   './img/8711.png',
